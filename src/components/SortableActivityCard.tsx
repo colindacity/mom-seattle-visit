@@ -33,6 +33,14 @@ const categoryConfig: Record<string, { icon: typeof Music; color: string; bgColo
   sightseeing: { icon: Camera, color: 'text-amber-600', bgColor: 'bg-amber-100 border-amber-200' },
 };
 
+const cityBadges: Record<string, { color: string; label: string }> = {
+  seattle: { color: 'bg-blue-500 text-white', label: 'Seattle' },
+  portland: { color: 'bg-rose-500 text-white', label: 'Portland' },
+  tacoma: { color: 'bg-teal-500 text-white', label: 'Tacoma' },
+  olympia: { color: 'bg-purple-500 text-white', label: 'Olympia' },
+  'en-route': { color: 'bg-gray-500 text-white', label: 'En Route' },
+};
+
 export default function SortableActivityCard({
   id,
   activity,
@@ -197,9 +205,16 @@ export default function SortableActivityCard({
           )}
         </div>
 
-        <div className="flex items-center gap-1 text-gray-500">
-          <MapPin className="w-3 h-3" />
-          {activity.city}
+        <div className="flex items-center gap-2">
+          <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${cityBadges[activity.city]?.color || 'bg-gray-500 text-white'}`}>
+            {cityBadges[activity.city]?.label || activity.city.toUpperCase()}
+          </span>
+          {activity.distance && (
+            <span className="flex items-center gap-1 text-[10px] text-gray-500">
+              <MapPin className="w-3 h-3" />
+              {activity.distance}
+            </span>
+          )}
         </div>
       </div>
 

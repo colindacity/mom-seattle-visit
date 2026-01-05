@@ -54,6 +54,14 @@ const priorityBadges: Record<string, string> = {
   'nice-to-have': 'bg-gray-100 text-gray-600',
 };
 
+const cityBadges: Record<string, { color: string; label: string }> = {
+  seattle: { color: 'bg-blue-500 text-white', label: 'Seattle' },
+  portland: { color: 'bg-rose-500 text-white', label: 'Portland' },
+  tacoma: { color: 'bg-teal-500 text-white', label: 'Tacoma' },
+  olympia: { color: 'bg-purple-500 text-white', label: 'Olympia' },
+  'en-route': { color: 'bg-gray-500 text-white', label: 'En Route' },
+};
+
 export default function ActivityCard({
   activity,
   isDragging = false,
@@ -101,9 +109,15 @@ export default function ActivityCard({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className={`font-medium text-gray-900 leading-tight ${isScheduled ? 'text-xs' : 'text-sm'}`}>
-                {activity.name}
-              </h3>
+              <div className="flex-1 min-w-0">
+                <h3 className={`font-medium text-gray-900 leading-tight ${isScheduled ? 'text-xs' : 'text-sm'}`}>
+                  {activity.name}
+                </h3>
+                {/* City badge */}
+                <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-semibold ${cityBadges[activity.city]?.color || 'bg-gray-500 text-white'}`}>
+                  {cityBadges[activity.city]?.label || activity.city.toUpperCase()}
+                </span>
+              </div>
               <GripVertical className="w-4 h-4 text-gray-300 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
 
@@ -130,10 +144,19 @@ export default function ActivityCard({
                 </span>
               )}
 
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white rounded text-[10px] text-gray-600">
-                <Clock className="w-2.5 h-2.5" />
-                {activity.duration}
-              </span>
+              {activity.duration && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white rounded text-[10px] text-gray-600">
+                  <Clock className="w-2.5 h-2.5" />
+                  {activity.duration}
+                </span>
+              )}
+
+              {activity.distance && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-medium">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {activity.distance}
+                </span>
+              )}
 
               {activity.seniorPrice !== undefined && activity.seniorPrice > 0 && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-medium">
