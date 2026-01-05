@@ -112,9 +112,8 @@ export default function Home() {
           setSchedule(savedSchedule);
 
           // Calculate unscheduled activities
-          const scheduledIds = Object.values(savedSchedule)
-            .flat()
-            .map((item: ScheduledItem) => item.activityId);
+          const scheduledIds = (Object.values(savedSchedule).flat() as ScheduledItem[])
+            .map(item => item.activityId);
           const unscheduledIds = allActivities
             .map(a => a.id)
             .filter(id => !scheduledIds.includes(id));
