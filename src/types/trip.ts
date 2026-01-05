@@ -8,12 +8,12 @@ export interface Activity {
   city: 'seattle' | 'portland' | 'tacoma' | 'olympia' | 'en-route';
   date?: string; // Specific date if event-based
   time?: string;
-  duration: string;
+  duration?: string;
   price?: number;
   seniorPrice?: number;
   seniorDiscount?: string;
   bookingUrl?: string;
-  bookingRequired: boolean;
+  bookingRequired?: boolean;
   image?: string;
   notes?: string[];
   tags?: string[];
