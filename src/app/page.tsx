@@ -25,6 +25,7 @@ import DayRow from '@/components/DayRow';
 import ActivityPool from '@/components/ActivityPool';
 import TripHeader from '@/components/TripHeader';
 import TripSummary from '@/components/TripSummary';
+import AddCustomEventModal from '@/components/AddCustomEventModal';
 import {
   Filter,
   Sparkles,
@@ -70,29 +71,78 @@ export default function Home() {
 
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+
+  // Custom events
+  const [customEvents, setCustomEvents] = useState<Activity[]>([]);
 
   // Drag state
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeActivity, setActiveActivity] = useState<Activity | null>(null);
 
-  // Load from localStorage
+  // Combine built-in activities with custom events
+  const allActivities = useMemo(() => {
+    return [...activities, ...customEvents];
+  }, [customEvents]);
+
+  // Load custom events from API
   useEffect(() => {
-    const saved = localStorage.getItem('seattle-trip-schedule');
-    if (saved) {
+    async function loadCustomEvents() {
       try {
-        const { schedule: savedSchedule, unscheduled: savedUnscheduled } = JSON.parse(saved);
-        setSchedule(savedSchedule);
-        setUnscheduled(savedUnscheduled);
+        const response = await fetch('/api/custom-events');
+        const { events } = await response.json();
+        if (events) {
+          setCustomEvents(events);
+        }
       } catch (e) {
-        console.error('Failed to load saved schedule');
+        console.error('Failed to load custom events from server');
       }
     }
+    loadCustomEvents();
   }, []);
 
-  // Save to localStorage
+  // Load schedule from API
   useEffect(() => {
-    localStorage.setItem('seattle-trip-schedule', JSON.stringify({ schedule, unscheduled }));
-  }, [schedule, unscheduled]);
+    async function loadSchedule() {
+      try {
+        const response = await fetch('/api/schedule');
+        const { schedule: savedSchedule } = await response.json();
+
+        if (savedSchedule && Object.keys(savedSchedule).length > 0) {
+          setSchedule(savedSchedule);
+
+          // Calculate unscheduled activities
+          const scheduledIds = Object.values(savedSchedule)
+            .flat()
+            .map((item: ScheduledItem) => item.activityId);
+          const unscheduledIds = allActivities
+            .map(a => a.id)
+            .filter(id => !scheduledIds.includes(id));
+          setUnscheduled(unscheduledIds);
+        }
+      } catch (e) {
+        console.error('Failed to load schedule from server');
+      }
+    }
+    loadSchedule();
+  }, [allActivities]);
+
+  // Save to API (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      try {
+        await fetch('/api/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schedule }),
+        });
+      } catch (e) {
+        console.error('Failed to save schedule to server');
+      }
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [schedule]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -106,7 +156,25 @@ export default function Home() {
   );
 
   // Get activity by ID
-  const getActivity = (id: string) => activities.find(a => a.id === id);
+  const getActivity = (id: string) => allActivities.find(a => a.id === id);
+
+  // Add custom event handler
+  const handleAddCustomEvent = async (event: Activity) => {
+    try {
+      const response = await fetch('/api/custom-events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+
+      if (response.ok) {
+        setCustomEvents(prev => [...prev, event]);
+        setUnscheduled(prev => [...prev, event.id]);
+      }
+    } catch (e) {
+      console.error('Failed to add custom event');
+    }
+  };
 
   // Filter activities
   const filteredActivities = useMemo(() => {
@@ -264,8 +332,13 @@ export default function Home() {
       empty[format(day, 'yyyy-MM-dd')] = [];
     });
     setSchedule(empty);
-    setUnscheduled(activities.map(a => a.id));
-    localStorage.removeItem('seattle-trip-schedule');
+    setUnscheduled(allActivities.map(a => a.id));
+    // Clear server-side schedule
+    fetch('/api/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schedule: empty }),
+    }).catch(e => console.error('Failed to clear schedule'));
   };
 
   // Get special items for a day
@@ -340,6 +413,15 @@ export default function Home() {
             >
               <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">Auto-Schedule</span>
+            </button>
+
+            <button
+              onClick={() => setShowAddEventModal(true)}
+              className="shrink-0 flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+              title="Add custom event"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Event</span>
             </button>
 
             <button
@@ -487,6 +569,13 @@ export default function Home() {
             onClose={() => setSelectedActivity(null)}
           />
         )}
+
+        {/* Add Custom Event Modal */}
+        <AddCustomEventModal
+          isOpen={showAddEventModal}
+          onClose={() => setShowAddEventModal(false)}
+          onAdd={handleAddCustomEvent}
+        />
 
         {/* Drag overlay */}
         <DragOverlay>
