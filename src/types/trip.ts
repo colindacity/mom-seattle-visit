@@ -9,6 +9,7 @@ export interface Activity {
   date?: string; // Specific date if event-based
   time?: string;
   duration?: string;
+  distance?: string; // Distance from Seattle or travel distance
   price?: number;
   seniorPrice?: number;
   seniorDiscount?: string;
