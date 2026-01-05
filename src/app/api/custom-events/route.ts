@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import redis from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import type { Activity } from '@/types/trip';
 
@@ -7,7 +7,7 @@ const CUSTOM_EVENTS_KEY = 'seattle-trip-custom-events';
 // GET - Load custom events
 export async function GET() {
   try {
-    const events = await kv.get<Activity[]>(CUSTOM_EVENTS_KEY);
+    const events = await redis.get<Activity[]>(CUSTOM_EVENTS_KEY);
     return NextResponse.json({ events: events || [] });
   } catch (error) {
     console.error('Error loading custom events:', error);
@@ -24,11 +24,11 @@ export async function POST(request: Request) {
     const event: Activity = await request.json();
 
     // Get existing events
-    const events = await kv.get<Activity[]>(CUSTOM_EVENTS_KEY) || [];
+    const events = await redis.get<Activity[]>(CUSTOM_EVENTS_KEY) || [];
 
     // Add new event
     const updatedEvents = [...events, event];
-    await kv.set(CUSTOM_EVENTS_KEY, updatedEvents);
+    await redis.set(CUSTOM_EVENTS_KEY, updatedEvents);
 
     return NextResponse.json({ success: true, event });
   } catch (error) {
@@ -46,11 +46,11 @@ export async function DELETE(request: Request) {
     const { id } = await request.json();
 
     // Get existing events
-    const events = await kv.get<Activity[]>(CUSTOM_EVENTS_KEY) || [];
+    const events = await redis.get<Activity[]>(CUSTOM_EVENTS_KEY) || [];
 
     // Remove event
     const updatedEvents = events.filter(e => e.id !== id);
-    await kv.set(CUSTOM_EVENTS_KEY, updatedEvents);
+    await redis.set(CUSTOM_EVENTS_KEY, updatedEvents);
 
     return NextResponse.json({ success: true });
   } catch (error) {
