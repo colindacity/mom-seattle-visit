@@ -1,7 +1,6 @@
-import { Redis } from "@upstash/redis";
+import Redis from 'ioredis';
 
-// Upstash Redis client that automatically reads environment variables
-// set by Vercel marketplace integration
-const redis = Redis.fromEnv();
+// Redis Cloud client using REDIS_URL from Vercel marketplace integration
+const redis = new Redis(process.env.REDIS_URL!);
 
 export default redis;
